@@ -95,7 +95,7 @@ fn view(model: Model) -> Element(Msg) {
         ]),
         html.div([], [
           html.ul([attribute.class("flex flex-col items-center gap-2")], {
-            list.map(model.past_inputs, view_guess)
+            list.map(model.past_inputs, fn(x) { view_guess(x, model) })
           }),
         ]),
         html.form(
@@ -121,13 +121,56 @@ fn view(model: Model) -> Element(Msg) {
   ])
 }
 
-fn view_guess(guess: String) -> Element(Msg) {
+type LetterStatus {
+  Correct
+  InvalidPos
+  Incorrect
+}
+
+fn get_letter_status(word: String, letter: #(Int, String)) {
+  let #(_, letter_val) = letter
+  let is_letter_in_word = string.contains(word, letter_val)
+  let is_letter_in_correct_pos = check_if_letter_in_correct_pos(word, letter)
+  case is_letter_in_word {
+    True ->
+      case is_letter_in_correct_pos {
+        True -> Correct
+        False -> InvalidPos
+      }
+    False -> Incorrect
+  }
+}
+
+fn check_if_letter_in_correct_pos(word: String, letter: #(Int, String)) {
+  let #(idx, letter_val) = letter
+  let res =
+    string.split(word, "")
+    |> list.index_map(fn(x, i) { #(i, x) })
+    |> list.find(fn(val) {
+      let #(i, x) = val
+      i == idx && x == letter_val
+    })
+    |> option.from_result
+
+  case res {
+    option.Some(_) -> True
+    option.None -> False
+  }
+}
+
+fn view_guess(guess: String, model: Model) -> Element(Msg) {
   html.div([attribute.class("flex gap-2")], {
-    list.map(string.split(guess, ""), view_letter)
+    list.map(
+      string.split(guess, "")
+        |> list.index_map(fn(x, i) { #(i, x) }),
+      fn(x) { view_letter(x, model) },
+    )
   })
 }
 
-fn view_letter(letter: String) -> Element(Msg) {
+fn view_letter(letter: #(Int, String), model: Model) -> Element(Msg) {
+  let letter_status = get_letter_status(model.word, letter)
+  let #(_, letter_val) = letter
   html.span(
     [
       attribute.class(
@@ -136,7 +179,11 @@ fn view_letter(letter: String) -> Element(Msg) {
       attribute.class(
         "border border-[--pico-form-element-border-color] rounded-sm",
       ),
+      attribute.classes([
+        #("bg-[#c7aa40]", letter_status == InvalidPos),
+        #("bg-[#288a3b]", letter_status == Correct),
+      ]),
     ],
-    [html.text(letter)],
+    [html.text(letter_val)],
   )
 }
