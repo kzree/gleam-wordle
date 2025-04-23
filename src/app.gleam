@@ -84,30 +84,59 @@ fn get_form_value(
 }
 
 fn view(model: Model) -> Element(Msg) {
-  html.div([attribute.class("container")], [
-    html.div([], [html.h1([], [html.text(model.word)])]),
-    html.div([], [html.ul([], { list.map(model.past_inputs, view_guess) })]),
-    html.form(
+  html.div([attribute.class("container grid place-items-center")], [
+    html.div(
+      [attribute.class("max-w-[500px] py-12 w-full flex flex-col gap-4")],
       [
-        event.on_submit(fn(values: List(#(String, String))) -> Msg {
-          let word = get_form_value(values, "word")
-          case word {
-            option.Some(word) -> UserGuessed(word)
-            option.None -> UserGuessed("")
-          }
-        }),
-      ],
-      [
-        html.input([
-          attribute.value(model.input),
-          attribute.name("word"),
-          event.on_input(UserTyped),
+        html.div([], [
+          html.h1([attribute.class("text-4xl text-center capitalize")], [
+            html.text(model.word),
+          ]),
         ]),
+        html.div([], [
+          html.ul([attribute.class("flex flex-col items-center gap-2")], {
+            list.map(model.past_inputs, view_guess)
+          }),
+        ]),
+        html.form(
+          [
+            event.on_submit(fn(values: List(#(String, String))) -> Msg {
+              let word = get_form_value(values, "word")
+              case word {
+                option.Some(word) -> UserGuessed(word)
+                option.None -> UserGuessed("")
+              }
+            }),
+          ],
+          [
+            html.input([
+              attribute.value(model.input),
+              attribute.name("word"),
+              event.on_input(UserTyped),
+            ]),
+          ],
+        ),
       ],
     ),
   ])
 }
 
 fn view_guess(guess: String) -> Element(Msg) {
-  html.li([], [html.text(guess)])
+  html.div([attribute.class("flex gap-2")], {
+    list.map(string.split(guess, ""), view_letter)
+  })
+}
+
+fn view_letter(letter: String) -> Element(Msg) {
+  html.span(
+    [
+      attribute.class(
+        "w-[52px] h-[52px] text-2xl font-bold text-center grid place-items-center uppercase",
+      ),
+      attribute.class(
+        "border border-[--pico-form-element-border-color] rounded-sm",
+      ),
+    ],
+    [html.text(letter)],
+  )
 }
