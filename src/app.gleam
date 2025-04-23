@@ -10,6 +10,8 @@ import lustre/event
 
 const max_word_length = 5
 
+const max_guesses = 6
+
 pub fn register() -> Result(Nil, lustre.Error) {
   let component = lustre.simple(init, update, view)
 
@@ -60,7 +62,7 @@ fn update(model: Model, msg: Msg) -> Model {
           Model(
             ..model,
             input: "",
-            past_inputs: list.reverse([word, ..model.past_inputs]),
+            past_inputs: list.append(model.past_inputs, [word]),
           )
         }
         False -> model
@@ -86,16 +88,19 @@ fn get_form_value(
 fn view(model: Model) -> Element(Msg) {
   html.div([attribute.class("container grid place-items-center")], [
     html.div(
-      [attribute.class("max-w-[500px] py-12 w-full flex flex-col gap-4")],
+      [attribute.class("max-w-[500px] py-12 w-full flex flex-col gap-16")],
       [
         html.div([], [
-          html.h1([attribute.class("text-4xl text-center capitalize")], [
-            html.text(model.word),
-          ]),
-        ]),
-        html.div([], [
           html.ul([attribute.class("flex flex-col items-center gap-2")], {
-            list.map(model.past_inputs, fn(x) { view_guess(x, model) })
+            let empty_options =
+              list.repeat("", max_guesses - list.length(model.past_inputs))
+            list.append(model.past_inputs, empty_options)
+            |> list.map(fn(x) {
+              case x {
+                "" -> view_empty_line(model)
+                _ -> view_guess(x, model)
+              }
+            })
           }),
         ]),
         html.form(
@@ -156,6 +161,16 @@ fn check_if_letter_in_correct_pos(word: String, letter: #(Int, String)) {
     option.Some(_) -> True
     option.None -> False
   }
+}
+
+fn view_empty_line(model: Model) -> Element(Msg) {
+  html.div([attribute.class("flex gap-2")], {
+    list.map(
+      list.repeat(" ", max_word_length)
+        |> list.index_map(fn(x, i) { #(i, x) }),
+      fn(x) { view_letter(x, model) },
+    )
+  })
 }
 
 fn view_guess(guess: String, model: Model) -> Element(Msg) {
