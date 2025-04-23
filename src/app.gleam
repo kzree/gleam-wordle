@@ -34,9 +34,9 @@ type Msg {
 fn update(model: Model, msg: Msg) -> Model {
   case msg {
     UserTyped(input) ->
-      case string.length(input) <= 6 {
+      case string.length(string.trim(input)) <= 6 {
         True -> {
-          Model(..model, input: input)
+          Model(..model, input: string.trim(input))
         }
         False -> model
       }
