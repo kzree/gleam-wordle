@@ -8,6 +8,8 @@ import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 
+const max_word_length = 5
+
 pub fn register() -> Result(Nil, lustre.Error) {
   let component = lustre.simple(init, update, view)
 
@@ -18,12 +20,24 @@ pub fn element() -> Element(msg) {
   element.element("wordle-app", [], [])
 }
 
+fn get_random_word() {
+  let words = ["crank", "plate"]
+
+  list.sample(words, 1)
+  |> list.last
+  |> option.from_result
+}
+
 type Model {
   Model(word: String, input: String, past_inputs: List(String))
 }
 
 fn init(_) -> Model {
-  Model("", "", [])
+  let word = get_random_word()
+  case word {
+    option.Some(value) -> Model(value, "", [])
+    option.None -> Model("", "", [])
+  }
 }
 
 type Msg {
@@ -34,14 +48,14 @@ type Msg {
 fn update(model: Model, msg: Msg) -> Model {
   case msg {
     UserTyped(input) ->
-      case string.length(string.trim(input)) <= 6 {
+      case string.length(string.trim(input)) <= max_word_length {
         True -> {
           Model(..model, input: string.trim(input))
         }
         False -> model
       }
     UserGuessed(word) ->
-      case string.length(word) == 6 {
+      case string.length(word) == max_word_length {
         True -> {
           Model(
             ..model,
@@ -71,6 +85,7 @@ fn get_form_value(
 
 fn view(model: Model) -> Element(Msg) {
   html.div([attribute.class("container")], [
+    html.div([], [html.h1([], [html.text(model.word)])]),
     html.div([], [html.ul([], { list.map(model.past_inputs, view_guess) })]),
     html.form(
       [
