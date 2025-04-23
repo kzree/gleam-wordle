@@ -1,12 +1,12 @@
 import gleam/list
-import gleam/option.{type Option}
-import gleam/result
+import gleam/option
 import gleam/string
 import lustre
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
+import util/form
 
 const max_word_length = 5
 
@@ -23,22 +23,33 @@ pub fn element() -> Element(msg) {
 }
 
 fn get_random_word() {
-  let words = ["crank", "plate"]
+  let words = ["crank", "plate", "shave", "shard", "panic", "tangy"]
 
   list.sample(words, 1)
   |> list.last
   |> option.from_result
 }
 
+type GameState {
+  Win
+  Lose
+  Active
+}
+
 type Model {
-  Model(word: String, input: String, past_inputs: List(String))
+  Model(
+    word: String,
+    input: String,
+    past_inputs: List(String),
+    game_state: GameState,
+  )
 }
 
 fn init(_) -> Model {
   let word = get_random_word()
   case word {
-    option.Some(value) -> Model(value, "", [])
-    option.None -> Model("", "", [])
+    option.Some(value) -> Model(value, "", [], Active)
+    option.None -> Model("", "", [], Active)
   }
 }
 
@@ -61,6 +72,14 @@ fn update(model: Model, msg: Msg) -> Model {
         True -> {
           Model(
             ..model,
+            game_state: case model.word == word {
+              True -> Win
+              False ->
+                case list.length(model.past_inputs) + 1 == max_guesses {
+                  True -> Lose
+                  False -> Active
+                }
+            },
             input: "",
             past_inputs: list.append(model.past_inputs, [word]),
           )
@@ -68,21 +87,6 @@ fn update(model: Model, msg: Msg) -> Model {
         False -> model
       }
   }
-}
-
-fn get_form_value(
-  values: List(#(String, String)),
-  list_key: String,
-) -> Option(String) {
-  list.find(values, fn(pair) {
-    let #(key, _) = pair
-    key == list_key
-  })
-  |> result.map(fn(res) -> String {
-    let #(_, value) = res
-    value
-  })
-  |> option.from_result
 }
 
 fn view(model: Model) -> Element(Msg) {
@@ -103,10 +107,21 @@ fn view(model: Model) -> Element(Msg) {
             })
           }),
         ]),
+        case model.game_state {
+          Active -> element.none()
+          Lose ->
+            html.div([attribute.class("flex justify-center w-full text-xl")], [
+              html.text("Loser!"),
+            ])
+          Win ->
+            html.div([attribute.class("flex justify-center w-full text-xl")], [
+              html.text("Winner!"),
+            ])
+        },
         html.form(
           [
             event.on_submit(fn(values: List(#(String, String))) -> Msg {
-              let word = get_form_value(values, "word")
+              let word = form.get_form_value(values, "word")
               case word {
                 option.Some(word) -> UserGuessed(word)
                 option.None -> UserGuessed("")
