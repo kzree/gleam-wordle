@@ -151,13 +151,10 @@ fn get_letter_status(word: String, letter: #(Int, String)) {
   let #(_, letter_val) = letter
   let is_letter_in_word = string.contains(word, letter_val)
   let is_letter_in_correct_pos = check_if_letter_in_correct_pos(word, letter)
-  case is_letter_in_word {
-    True ->
-      case is_letter_in_correct_pos {
-        True -> Correct
-        False -> InvalidPos
-      }
-    False -> Incorrect
+  case is_letter_in_word, is_letter_in_correct_pos {
+    True, True -> Correct
+    True, False -> InvalidPos
+    False, _ -> Incorrect
   }
 }
 
