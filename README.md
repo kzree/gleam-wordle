@@ -9,7 +9,7 @@ Wordle clone written in Lustre for learning Gleam and Lustre
 - [ ] Improve letter coloring
   - [ ] Multiple of same character in target word
   - [ ] Only color characters that exist (5 letter a-s get all colored for example)
-- [ ] Restart button
+- [x] Restart button
 - [ ] Floating success screen
 - [ ] Save scores
 - [ ] Show score history

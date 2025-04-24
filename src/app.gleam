@@ -59,6 +59,7 @@ fn init(_) -> Model {
 type Msg {
   UserTyped(input: String)
   UserGuessed(word: String)
+  Restart
 }
 
 fn update(model: Model, msg: Msg) -> Model {
@@ -95,6 +96,7 @@ fn update(model: Model, msg: Msg) -> Model {
         }
         False -> model
       }
+    Restart -> init(Nil)
   }
 }
 
@@ -119,12 +121,14 @@ fn view(model: Model) -> Element(Msg) {
         case model.game_state {
           Active -> element.none()
           Lose ->
-            html.div([attribute.class("flex justify-center w-full text-xl")], [
-              html.text("Loser!"),
+            html.div([attribute.class("flex justify-center w-full gap-4")], [
+              html.p([attribute.class("text-xl")], [html.text("Loser!")]),
+              html.button([event.on_click(Restart)], [html.text("Restart")]),
             ])
           Win ->
-            html.div([attribute.class("flex justify-center w-full text-xl")], [
-              html.text("Winner!"),
+            html.div([attribute.class("flex justify-center w-full gap-4")], [
+              html.p([attribute.class("text-xl")], [html.text("Winner!")]),
+              html.button([event.on_click(Restart)], [html.text("Restart")]),
             ])
         },
         html.form(
@@ -139,6 +143,9 @@ fn view(model: Model) -> Element(Msg) {
           ],
           [
             html.input([
+              attribute.disabled(
+                model.game_state == Lose || model.game_state == Win,
+              ),
               attribute.value(model.input),
               attribute.name("word"),
               event.on_input(UserTyped),
