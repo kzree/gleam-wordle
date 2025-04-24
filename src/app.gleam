@@ -1,12 +1,14 @@
 import gleam/list
 import gleam/option
 import gleam/string
+import keys
 import lustre
 import lustre/attribute
 import lustre/element.{type Element}
 import lustre/element/html
 import lustre/event
 import util/form
+import util/letter
 
 const max_word_length = 5
 
@@ -136,43 +138,10 @@ fn view(model: Model) -> Element(Msg) {
             ]),
           ],
         ),
+        keys.view(model.past_inputs, model.word),
       ],
     ),
   ])
-}
-
-type LetterStatus {
-  Correct
-  InvalidPos
-  Incorrect
-}
-
-fn get_letter_status(word: String, letter: #(Int, String)) {
-  let #(_, letter_val) = letter
-  let is_letter_in_word = string.contains(word, letter_val)
-  let is_letter_in_correct_pos = check_if_letter_in_correct_pos(word, letter)
-  case is_letter_in_word, is_letter_in_correct_pos {
-    True, True -> Correct
-    True, False -> InvalidPos
-    False, _ -> Incorrect
-  }
-}
-
-fn check_if_letter_in_correct_pos(word: String, letter: #(Int, String)) {
-  let #(idx, letter_val) = letter
-  let res =
-    string.split(word, "")
-    |> list.index_map(fn(x, i) { #(i, x) })
-    |> list.find(fn(val) {
-      let #(i, x) = val
-      i == idx && x == letter_val
-    })
-    |> option.from_result
-
-  case res {
-    option.Some(_) -> True
-    option.None -> False
-  }
 }
 
 fn view_empty_line(model: Model) -> Element(Msg) {
@@ -196,7 +165,7 @@ fn view_guess(guess: String, model: Model) -> Element(Msg) {
 }
 
 fn view_letter(letter: #(Int, String), model: Model) -> Element(Msg) {
-  let letter_status = get_letter_status(model.word, letter)
+  let letter_status = letter.get_status(model.word, letter)
   let #(_, letter_val) = letter
   html.span(
     [
@@ -207,8 +176,8 @@ fn view_letter(letter: #(Int, String), model: Model) -> Element(Msg) {
         "border border-[--pico-form-element-border-color] rounded-sm",
       ),
       attribute.classes([
-        #("bg-[#c7aa40]", letter_status == InvalidPos),
-        #("bg-[#288a3b]", letter_status == Correct),
+        #("bg-[#c7aa40]", letter_status == letter.InvalidPos),
+        #("bg-[#288a3b]", letter_status == letter.Correct),
       ]),
     ],
     [html.text(letter_val)],
