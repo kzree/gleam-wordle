@@ -1,5 +1,6 @@
 import gleam/list
 import gleam/option
+import gleam/regexp
 import gleam/string
 import keys
 import lustre
@@ -62,13 +63,19 @@ type Msg {
 
 fn update(model: Model, msg: Msg) -> Model {
   case msg {
-    UserTyped(input) ->
-      case string.length(string.trim(input)) <= max_word_length {
-        True -> {
+    UserTyped(input) -> {
+      let assert Ok(re) = regexp.from_string("^[a-zA-Z]*$")
+
+      let matches_regex = regexp.check(re, input)
+      let is_valid_length =
+        string.trim(input) |> string.length <= max_word_length
+      case matches_regex, is_valid_length {
+        True, True -> {
           Model(..model, input: string.trim(input))
         }
-        False -> model
+        _, _ -> model
       }
+    }
     UserGuessed(word) ->
       case string.length(word) == max_word_length {
         True -> {
@@ -94,7 +101,7 @@ fn update(model: Model, msg: Msg) -> Model {
 fn view(model: Model) -> Element(Msg) {
   html.div([attribute.class("container grid place-items-center")], [
     html.div(
-      [attribute.class("max-w-[500px] py-12 w-full flex flex-col gap-16")],
+      [attribute.class("max-w-[500px] py-24 w-full flex flex-col gap-16")],
       [
         html.div([], [
           html.ul([attribute.class("flex flex-col items-center gap-2")], {

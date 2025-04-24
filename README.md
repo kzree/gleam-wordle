@@ -4,7 +4,8 @@ Wordle clone written in Lustre for learning Gleam and Lustre
 
 ## Todo
 
-- [ ] Show letters at the bottom
+- [x] Show letters at the bottom
+- [x] Only allow letters for input
 - [ ] Improve letter coloring
   - [ ] Multiple of same character in target word
   - [ ] Only color characters that exist (5 letter a-s get all colored for example)
